@@ -1,7 +1,7 @@
 <template>
     <div>
         <button @click="printPage">打印</button>
-        <div id="printPage">
+        <div id="printPageCon">
             <table v-for="(res,index) in result" :key="index"  class="table" width="100%"  style="border-collapse: collapse;text-align:center;color:#5a5e66;background:#fff;margin-bottom:30px;">
                 <thead id="table">
                     <tr style="height:28px">
@@ -53,40 +53,13 @@
 
         },
         methods:{
-            // PrintRow(){
-            //     printJS({
-            //         printable:  'printPage',
-            //         type: 'html',
-            //         targetStyles: ['*']
-            //     })
-            // },
-
             printPage(){
                 printJS({
-                    printable:  'printPage',
+                    printable:  'printPageCon',
                     type: 'html',
                     targetStyles: ['*']
                 })
-                //this.print(document.getElementById("printPage").innerHTML);
-            },
-            print(pageHtml) {
-                let ifr = document.getElementById("ifram").contentWindow;
-                let doc = ifr.document;
-                doc.body.innerHTML = '';
-                doc.write('<div>' + pageHtml + '</div>');
-                ifr.focus();
-                ifr.print();
-                return false
-                // 对要打印内容 拼接成 HTML
-                let printStr = "<html><head><meta http-equiv='Content-Type' content='text/html; charset=utf-8'></head><body >";
-                printStr = printStr + pageHtml + "</body></html>";
-                let pwin = window.open(); //打开一个新窗口
-                pwin.document.write(printStr); //写入打印内容
-                pwin.document.close(); //告诉浏览器页面已经加载完毕
-                pwin.print(); //调用打印机
-                pwin.close(); //这个点取消和打印就会关闭新打开的窗口
-            },
-
+            }
         }
     }
 </script>
