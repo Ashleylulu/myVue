@@ -17,7 +17,9 @@ export default {
         console.log(this.res)
     },
     methods:{
-        
+        test(){
+            
+        }
     }
 }
 </script>
