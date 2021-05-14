@@ -33,9 +33,6 @@
             console.log(data)
         },
         methods:{
-            changeCron(val){
-                this.cron=val
-            },
             getJSON(url){
                 const promise = new Promise(function(resolve, reject){
                     const handler = function() {

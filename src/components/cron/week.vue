@@ -1,16 +1,14 @@
 <template>
-    <div :val="value_">
+    <div :val="value_" class="cron_con">
         <div>
             <span style="margin-left: 5px; margin-right: 5px;">每</span>
-            <el-input @change="type = '3'" v-model="loop.end"  size="mini" style="width: 100px;"></el-input>
+            <el-input @change="type = '3'"  v-model="loop"  size="mini" ></el-input>
             周
         </div>
         <div>
-            <el-radio v-model="type" label="4" size="mini">
-                <el-checkbox-group v-model="appoint" style="margin-left: 50px;  line-height: 25px;">
-                    <el-checkbox @change="type = '4'"  v-for="i in 7" :key="i" :label="i"></el-checkbox>
-                </el-checkbox-group>
-            </el-radio>
+            <el-checkbox-group v-model="appoint" style="margin-left: 50px;  line-height: 25px;">
+                <el-checkbox style="display: inline-block;margin-right: 10px;" @change="type = '4'"  v-for="i in 7" :key="i" :label="i"></el-checkbox>
+            </el-checkbox-group>
         </div>
     </div>
 </template>
@@ -22,65 +20,55 @@
             value: {
                 type: String,
                 default: '*'
+            },
+            mark : {
+                type: String
             }
         },
         data(){
             return {
-                type: '3', // 类型
-                cycle: { // 周期
-                    start: 0,
-                    end: 0
-                },
-                loop: { // 循环
-                    start: 0,
-                    end: 1
-                },
-                week: { // 指定周
-                    start: 1,
-                    end: 1
-                },
-                work: 0,
-                last: 0,
+                type: '1', // 类型
+                loop: 1,
                 appoint: [] // 指定
             }
         },
         computed:{
             value_ () {
                 let result = [];
+                let str = this.loop == '' ? 1 : this.loop;//如果为空,默认传1
                 switch (this.type) {
                     case '1': // 每秒
                         result.push('*')
                         break
-                    case '2': // 年期
-                        result.push(`${this.cycle.start}-${this.cycle.end}`)
-                        break
                     case '3': // 循环
-                        result = [`*`,`*/${this.loop.end}`,`?`]
-                        //result.push(`*/${this.loop.end}`)
+                        let lens = this.appoint.length;
+                        if (lens == 7 || lens == 0) {
+                            result = [`?`,`*`,`*/${str}`];
+                        } else {
+                            let apss = this.appoint.join(',');
+                            result = [`?`,`*`,`${apss}/${str}`];
+                        }
                         break
                     case '4': // 指定
-                        let aps = '';
                         let len = this.appoint.length;
-                        if (len == 6) {
-                            aps = '*';
+                        if (len == 7 || len == 0) {
+                            result = [`?`,`*`,`*/${str}`];
                         } else {
-                            aps = this.appoint.join(',');
+                            let aps = this.appoint.join(',');
+                            result = [`?`,`*`,`${aps}/${str}`];
                         }
-                        result = [`?`,`*`,`${aps}/${this.loop.end}`];
-                        //result.push(this.appoint.join(','))
-                        break
-                    case '6': // 最后
-                        result.push(`${this.last === 0 ? '' : this.last}L`)
-                        break
-                    case '7': // 指定周
-                        result.push(`${this.week.start}#${this.week.end}`)
                         break
                     default: // 不指定
                         result.push('?')
                         break
                 };
-                this.$emit('input', result.join(''))
-                return result.join('')
+                this.$emit('input', result.join(' '))
+                return result.join(' ')
+            }
+        },
+        watch:{
+            'value'(a,b){
+                this.updateVal()
             }
         },
         methods: {
@@ -88,38 +76,29 @@
                 if (!this.value) {
                     return
                 }
-                if (this.value === '?') {
-                    this.type = '5'
-                } else if (this.value.indexOf('-') !== -1) { // 2周期
-                    if (this.value.split('-').length === 2) {
-                        this.type = '2'
-                        this.cycle.start = this.value.split('-')[0]
-                        this.cycle.end = this.value.split('-')[1]
+                if (this.mark && this.mark == 'week') {
+                    if (this.value.indexOf('*/') !== -1) { // 可能是3或4
+                        //每几周
+                        let str = this.value.split('*/');
+                        let len = str.length;
+                        if (len === 2) {
+                            if (str[0].indexOf('?') != -1) {//代表每几周的每一天
+                                this.loop = Number(str[1])
+                            } else if (str[0].indexOf('*') != -1) {
+                                let loopStr = str[1].split(' ');
+                                this.loop = loopStr[0]
+                                this.appoint = [];
+                            }
+                        }
+                    } else if (this.value.indexOf('? *') != -1) {
+                        let str = this.value.split('? *');
+                        let loopStr = str[1].split(' ')[1].split('/');
+                        this.loop = loopStr[1];
+                        this.appoint = loopStr[0].split(',');
+                        this.appoint = this.appoint.map(it => Number(it));//需要转为数值类型,el-checkbox才会生效
                     }
-                } else if (this.value.indexOf('/') !== -1) { // 3循环
-                    if (this.value.split('/').length === 2) {
-                        this.type = '3'
-                        this.loop.start = this.value.split('/')[0]
-                        this.loop.end = this.value.split('/')[1]
-                    }
-                } else if (this.value.indexOf('*') !== -1) { // 1每
-                    this.type = '1'
-                } else if (this.value.indexOf('L') !== -1) { // 6最后
-                    this.type = '6'
-                    this.last = this.value.replace('L', '')
-                } else if (this.value.indexOf('#') !== -1) { // 7指定周
-                    if (this.value.split('#').length === 2) {
-                        this.type = '7'
-                        this.week.start = this.value.split('#')[0]
-                        this.week.end = this.value.split('#')[1]
-                    }
-                } else if (this.value.indexOf('W') !== -1) { // 8工作日
-                    this.type = '8'
-                    this.work = this.value.replace('W', '')
-                } else { // *
-                    this.type = '4'
-                    this.appoint = this.value.split(',')
                 }
+
             }
         },
         created () {
@@ -129,6 +108,16 @@
     }
 </script>
 
-<style scoped>
-
+<style lang="scss">
+    .cron_con{
+        .el-checkbox-group{
+            margin-left: 28px !important;
+        }
+        .el-checkbox__label{
+            padding-left: 5px;
+        }
+        .editAwardRule .el-checkbox{
+            width: 35px;
+        }
+    }
 </style>
